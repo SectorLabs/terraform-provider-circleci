@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/mrolla/terraform-provider-circleci/circleci/client/rest"
+	"github.com/SectorLabs/terraform-provider-circleci/circleci/client/rest"
 )
 
 type projectEnvironmentVariable struct {

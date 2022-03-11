@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 
-	client "github.com/mrolla/terraform-provider-circleci/circleci/client"
+	client "github.com/SectorLabs/terraform-provider-circleci/circleci/client"
 )
 
 func resourceCircleCIEnvironmentVariable() *schema.Resource {

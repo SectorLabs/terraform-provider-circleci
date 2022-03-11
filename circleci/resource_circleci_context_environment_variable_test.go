@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 
-	client "github.com/mrolla/terraform-provider-circleci/circleci/client"
+	client "github.com/SectorLabs/terraform-provider-circleci/circleci/client"
 )
 
 func TestAccCircleCIContextEnvironmentVariable_basic(t *testing.T) {

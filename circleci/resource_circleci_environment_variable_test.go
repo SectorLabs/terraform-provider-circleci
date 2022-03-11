@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/stretchr/testify/assert"
 
-	client "github.com/mrolla/terraform-provider-circleci/circleci/client"
+	client "github.com/SectorLabs/terraform-provider-circleci/circleci/client"
 )
 
 func TestAccCircleCIEnvironmentVariableOrganizationNotSet(t *testing.T) {
