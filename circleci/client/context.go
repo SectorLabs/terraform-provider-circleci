@@ -33,21 +33,16 @@ func (c *Client) GetContext(id string) (*api.Context, error) {
 }
 
 // GetContextByName gets an existing context by its name
-func (c *Client) GetContextByName(name, org string) (*api.Context, error) {
-	o, err := c.Organization(org)
-	if err != nil {
-		return nil, err
-	}
-
-	return c.contexts.ContextByName(c.vcs, o, name)
+func (c *Client) GetContextByName(name string) (*api.Context, error) {
+	return c.contexts.ContextByName(c.vcs, c.organization, name)
 }
 
 // GetContextByIDOrName gets a context by ID if a UUID is specified, and by name otherwise
-func (c *Client) GetContextByIDOrName(org, id string) (*api.Context, error) {
+func (c *Client) GetContextByIDOrName(id string) (*api.Context, error) {
 	if _, uuidErr := uuid.Parse(id); uuidErr == nil {
 		return c.GetContext(id)
 	} else {
-		return c.contexts.ContextByName(c.vcs, org, id)
+		return c.contexts.ContextByName(c.vcs, c.organization, id)
 	}
 }
 
@@ -62,16 +57,11 @@ type contextOwner struct {
 }
 
 // CreateContext creates a new context and returns the created context object
-func (c *Client) CreateContext(org, name string) (*api.Context, error) {
-	org, err := c.Organization(org)
-	if err != nil {
-		return nil, err
-	}
-
+func (c *Client) CreateContext(name string) (*api.Context, error) {
 	req, err := c.rest.NewRequest("POST", &url.URL{Path: "context"}, &createContextRequest{
 		Name: name,
 		Owner: &contextOwner{
-			Slug: fmt.Sprintf("%s/%s", c.vcs, org),
+			Slug: fmt.Sprintf("%s/%s", c.vcs, c.organization),
 			Type: "organization",
 		},
 	})

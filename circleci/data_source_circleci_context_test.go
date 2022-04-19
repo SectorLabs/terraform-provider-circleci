@@ -9,7 +9,7 @@ import (
 func TestAccCircleCIContextDataSource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccOrgProviders,
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccCircleCIContextDataSource,

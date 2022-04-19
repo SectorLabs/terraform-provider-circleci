@@ -5,11 +5,11 @@ import (
 	"os"
 	"testing"
 
+	client "github.com/SectorLabs/terraform-provider-circleci/circleci/client"
+
 	"github.com/CircleCI-Public/circleci-cli/api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-
-	client "github.com/mrolla/terraform-provider-circleci/circleci/client"
 )
 
 func TestAccCircleCIContextEnvironmentVariable_basic(t *testing.T) {
@@ -17,7 +17,7 @@ func TestAccCircleCIContextEnvironmentVariable_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccOrgProviders,
+		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckCircleCIContextEnvironmentVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -25,9 +25,9 @@ func TestAccCircleCIContextEnvironmentVariable_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckCircleCIContextEnvironmentVariableExists("circleci_context_environment_variable.foo", variable),
 					testAccCheckCircleCIContextEnvironmentVariableAttributes_basic(variable),
-					resource.TestCheckResourceAttr("circleci_context_environment_variable.foo", "variable", "VAR"),
+					resource.TestCheckResourceAttr("circleci_context_environment_variable.foo", "name", "VAR"),
 					resource.TestCheckResourceAttr("circleci_context_environment_variable.foo", "value", hashString("secret-value")),
-					resource.TestCheckResourceAttrSet("circleci_context_environment_variable.foo", "context_id"),
+					resource.TestCheckResourceAttrSet("circleci_context_environment_variable.foo", "context"),
 				),
 			},
 		},
@@ -39,7 +39,7 @@ func TestAccCircleCIContextEnvironmentVariable_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccOrgProviders,
+		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckCircleCIContextEnvironmentVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -47,9 +47,9 @@ func TestAccCircleCIContextEnvironmentVariable_update(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckCircleCIContextEnvironmentVariableExists("circleci_context_environment_variable.foo", variable),
 					testAccCheckCircleCIContextEnvironmentVariableAttributes_basic(variable),
-					resource.TestCheckResourceAttr("circleci_context_environment_variable.foo", "variable", "VAR"),
+					resource.TestCheckResourceAttr("circleci_context_environment_variable.foo", "name", "VAR"),
 					resource.TestCheckResourceAttr("circleci_context_environment_variable.foo", "value", hashString("secret-value")),
-					resource.TestCheckResourceAttrSet("circleci_context_environment_variable.foo", "context_id"),
+					resource.TestCheckResourceAttrSet("circleci_context_environment_variable.foo", "context"),
 				),
 			},
 			{
@@ -57,9 +57,9 @@ func TestAccCircleCIContextEnvironmentVariable_update(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckCircleCIContextEnvironmentVariableExists("circleci_context_environment_variable.foo", variable),
 					testAccCheckCircleCIContextEnvironmentVariableAttributes_update(variable),
-					resource.TestCheckResourceAttr("circleci_context_environment_variable.foo", "variable", "VAR_UPDATED"),
+					resource.TestCheckResourceAttr("circleci_context_environment_variable.foo", "name", "VAR_UPDATED"),
 					resource.TestCheckResourceAttr("circleci_context_environment_variable.foo", "value", hashString("secret-value-updated")),
-					resource.TestCheckResourceAttrSet("circleci_context_environment_variable.foo", "context_id"),
+					resource.TestCheckResourceAttrSet("circleci_context_environment_variable.foo", "context"),
 				),
 			},
 		},
@@ -71,7 +71,7 @@ func TestAccCircleCIContextEnvironmentVariable_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccOrgProviders,
+		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckCircleCIContextEnvironmentVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -81,17 +81,7 @@ func TestAccCircleCIContextEnvironmentVariable_import(t *testing.T) {
 			{
 				ResourceName: "circleci_context_environment_variable.foo",
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					org, err := testAccOrgProvider.Meta().(*client.Client).Organization("")
-					if err != nil {
-						return "", err
-					}
-
-					return fmt.Sprintf(
-						"%s/%s/%s",
-						org,
-						context.ID,
-						"VAR",
-					), nil
+					return fmt.Sprintf("%s/%s", context.ID, "VAR"), nil
 				},
 				PreConfig: func() {
 					os.Setenv("CIRCLECI_ENV_VALUE", "secret-value")
@@ -119,20 +109,15 @@ func TestAccCircleCIContextEnvironmentVariable_import(t *testing.T) {
 func TestAccCircleCIContextEnvironmentVariable_import_name(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccOrgProviders,
+		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckCircleCIContextEnvironmentVariableDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccCircleCIContextEnvironmentVariable_basic,
 			},
 			{
-				ResourceName: "circleci_context_environment_variable.foo",
-				ImportStateId: fmt.Sprintf(
-					"%s/%s/%s",
-					os.Getenv("TEST_CIRCLECI_ORGANIZATION"),
-					"terraform-test",
-					"VAR",
-				),
+				ResourceName:  "circleci_context_environment_variable.foo",
+				ImportStateId: fmt.Sprintf("%s/%s", "terraform-test", "VAR"),
 				PreConfig: func() {
 					os.Setenv("CIRCLECI_ENV_VALUE", "secret-value")
 				},
@@ -146,7 +131,7 @@ func TestAccCircleCIContextEnvironmentVariable_import_name(t *testing.T) {
 
 func testAccCheckCircleCIContextEnvironmentVariableExists(addr string, variable *api.EnvironmentVariable) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		c := testAccOrgProvider.Meta().(*client.Client)
+		c := testAccProvider.Meta().(*client.Client)
 
 		resource, ok := s.RootModule().Resources[addr]
 		if !ok {
@@ -156,13 +141,13 @@ func testAccCheckCircleCIContextEnvironmentVariableExists(addr string, variable 
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		envs, err := c.ListContextEnvironmentVariables(resource.Primary.Attributes["context_id"])
+		envs, err := c.ListContextEnvironmentVariables(resource.Primary.Attributes["context"])
 		if err != nil {
 			return fmt.Errorf("error getting context: %w", err)
 		}
 
 		for _, v := range *envs {
-			if v.Variable == resource.Primary.Attributes["variable"] {
+			if v.Variable == resource.Primary.Attributes["name"] {
 				*variable = v
 				return nil
 			}
@@ -170,14 +155,14 @@ func testAccCheckCircleCIContextEnvironmentVariableExists(addr string, variable 
 
 		return fmt.Errorf(
 			"variable '%s' not found in context '%s'",
-			resource.Primary.Attributes["variable"],
-			resource.Primary.Attributes["context_id"],
+			resource.Primary.Attributes["name"],
+			resource.Primary.Attributes["context"],
 		)
 	}
 }
 
 func testAccCheckCircleCIContextEnvironmentVariableDestroy(s *terraform.State) error {
-	c := testAccOrgProvider.Meta().(*client.Client)
+	c := testAccProvider.Meta().(*client.Client)
 
 	for _, resource := range s.RootModule().Resources {
 		if resource.Type != "circleci_context_environment_variable" {
@@ -188,9 +173,9 @@ func testAccCheckCircleCIContextEnvironmentVariableDestroy(s *terraform.State) e
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := c.GetContext(resource.Primary.Attributes["context_id"])
+		_, err := c.GetContext(resource.Primary.Attributes["context"])
 		if err == nil {
-			return fmt.Errorf("Context still exists: %s", resource.Primary.Attributes["context_id"])
+			return fmt.Errorf("Context still exists: %s", resource.Primary.Attributes["context"])
 		}
 	}
 
@@ -225,7 +210,7 @@ resource "circleci_context" "foo" {
 resource "circleci_context_environment_variable" "foo" {
 	variable   = "VAR"
 	value      = "secret-value"
-	context_id = circleci_context.foo.id
+	context = circleci_context.foo.id
 }
 `
 
@@ -237,6 +222,6 @@ resource "circleci_context" "foo" {
 resource "circleci_context_environment_variable" "foo" {
 	variable   = "VAR_UPDATED"
 	value      = "secret-value-updated"
-	context_id = circleci_context.foo.id
+	context = circleci_context.foo.id
 }
 `

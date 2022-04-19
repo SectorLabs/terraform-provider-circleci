@@ -22,8 +22,8 @@ type VCSInfo struct {
 }
 
 // GetProject gets an existing project by its project slug (vcs-slug/org-name/repo-name)
-func (c *Client) GetProject(org, project string) (*Project, error) {
-	slug, err := c.Slug(org, project)
+func (c *Client) GetProject(project string) (*Project, error) {
+	slug, err := c.Slug(project)
 	if err != nil {
 		return nil, err
 	}
@@ -35,8 +35,8 @@ func (c *Client) GetProject(org, project string) (*Project, error) {
 
 	p := &Project{}
 
-	if _, err := c.rest.DoRequest(req, project); err != nil {
-		return nil, err
+	if sts, err := c.rest.DoRequest(req, p); err != nil {
+		return nil, fmt.Errorf("could not find project: %v %v", sts, err)
 	}
 
 	return p, nil

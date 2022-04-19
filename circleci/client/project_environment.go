@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/mrolla/terraform-provider-circleci/circleci/client/rest"
+	"github.com/SectorLabs/terraform-provider-circleci/circleci/client/rest"
 )
 
 type projectEnvironmentVariable struct {
@@ -14,8 +14,8 @@ type projectEnvironmentVariable struct {
 }
 
 // HasProjectEnvironmentVariable checks for the existence of a matching project environment variable by name
-func (c *Client) HasProjectEnvironmentVariable(org, project, name string) (bool, error) {
-	slug, err := c.Slug(org, project)
+func (c *Client) HasProjectEnvironmentVariable(project, name string) (bool, error) {
+	slug, err := c.Slug(project)
 	if err != nil {
 		return false, err
 	}
@@ -43,8 +43,8 @@ func (c *Client) HasProjectEnvironmentVariable(org, project, name string) (bool,
 }
 
 // CreateProjectEnvironmentVariable creates a new project environment variable
-func (c *Client) CreateProjectEnvironmentVariable(org, project, name, value string) error {
-	slug, err := c.Slug(org, project)
+func (c *Client) CreateProjectEnvironmentVariable(project, name, value string) error {
+	slug, err := c.Slug(project)
 	if err != nil {
 		return err
 	}
@@ -66,8 +66,8 @@ func (c *Client) CreateProjectEnvironmentVariable(org, project, name, value stri
 }
 
 // DeleteProjectEnvironmentVariable deletes an existing project environment variable
-func (c *Client) DeleteProjectEnvironmentVariable(org, project, name string) error {
-	slug, err := c.Slug(org, project)
+func (c *Client) DeleteProjectEnvironmentVariable(project, name string) error {
+	slug, err := c.Slug(project)
 	if err != nil {
 		return err
 	}

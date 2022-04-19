@@ -14,8 +14,8 @@ type CheckoutKey struct {
 }
 
 // HasProjectCheckoutKey checks if an existing project contains checkout key by its fingerprint
-func (c *Client) HasProjectCheckoutKey(org, project, fingerprint string) (bool, error) {
-	slug, err := c.Slug(org, project)
+func (c *Client) HasProjectCheckoutKey(project, fingerprint string) (bool, error) {
+	slug, err := c.Slug(project)
 	if err != nil {
 		return false, err
 	}
@@ -34,8 +34,8 @@ func (c *Client) HasProjectCheckoutKey(org, project, fingerprint string) (bool, 
 }
 
 // GetCheckoutKey gets an existing project's checkout key by its fingerprint
-func (c *Client) GetCheckoutKey(org, project, fingerprint string) (*CheckoutKey, error) {
-	slug, err := c.Slug(org, project)
+func (c *Client) GetCheckoutKey(project, fingerprint string) (*CheckoutKey, error) {
+	slug, err := c.Slug(project)
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +58,8 @@ type createCheckoutKey struct {
 }
 
 // CreateCheckoutKey creates a new checkout key and returns the created object
-func (c *Client) CreateCheckoutKey(org, project, keyType string) (*CheckoutKey, error) {
-	slug, err := c.Slug(org, project)
+func (c *Client) CreateCheckoutKey(project, keyType string) (*CheckoutKey, error) {
+	slug, err := c.Slug(project)
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +81,8 @@ func (c *Client) CreateCheckoutKey(org, project, keyType string) (*CheckoutKey, 
 }
 
 // DeleteCheckoutKey deletes an existing checkout key and returns the created object
-func (c *Client) DeleteCheckoutKey(org, project, fingerprint string) error {
-	slug, err := c.Slug(org, project)
+func (c *Client) DeleteCheckoutKey(project, fingerprint string) error {
+	slug, err := c.Slug(project)
 	if err != nil {
 		return err
 	}

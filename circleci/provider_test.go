@@ -7,32 +7,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
-
 var (
-	testAccNoOrgProvider  *schema.Provider
-	testAccNoOrgProviders map[string]terraform.ResourceProvider
-)
-
-var (
-	testAccOrgProvider  *schema.Provider
-	testAccOrgProviders map[string]terraform.ResourceProvider
+	testAccProvider  *schema.Provider
+	testAccProviders map[string]terraform.ResourceProvider
 )
 
 func init() {
-	testAccNoOrgProvider = Provider().(*schema.Provider)
-	testAccNoOrgProviders = map[string]terraform.ResourceProvider{
-		"circleci": testAccNoOrgProvider,
-	}
-
-	testAccOrgProvider = Provider().(*schema.Provider)
-	testAccOrgProvider.Schema["organization"] = &schema.Schema{
+	testAccProvider = Provider().(*schema.Provider)
+	testAccProvider.Schema["organization"] = &schema.Schema{
 		Type:        schema.TypeString,
 		Optional:    true,
 		DefaultFunc: schema.EnvDefaultFunc("TEST_CIRCLECI_ORGANIZATION", nil),
 		Description: "The CircleCI organization.",
 	}
-	testAccOrgProviders = map[string]terraform.ResourceProvider{
-		"circleci": testAccOrgProvider,
+	testAccProviders = map[string]terraform.ResourceProvider{
+		"circleci": testAccProvider,
 	}
 }
 

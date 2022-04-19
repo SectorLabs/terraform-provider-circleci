@@ -2,14 +2,13 @@ package circleci
 
 import (
 	"fmt"
-	"os"
 	"testing"
+
+	client "github.com/SectorLabs/terraform-provider-circleci/circleci/client"
 
 	"github.com/CircleCI-Public/circleci-cli/api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-
-	client "github.com/mrolla/terraform-provider-circleci/circleci/client"
 )
 
 func TestAccCircleCIContext_basic(t *testing.T) {
@@ -17,7 +16,7 @@ func TestAccCircleCIContext_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccOrgProviders,
+		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckCircleCIContextDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -37,7 +36,7 @@ func TestAccCircleCIContext_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccOrgProviders,
+		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckCircleCIContextDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -65,7 +64,7 @@ func TestAccCircleCIContext_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccOrgProviders,
+		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckCircleCIContextDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -75,16 +74,7 @@ func TestAccCircleCIContext_import(t *testing.T) {
 			{
 				ResourceName: "circleci_context.foo",
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					org, err := testAccOrgProvider.Meta().(*client.Client).Organization("")
-					if err != nil {
-						return "", err
-					}
-
-					return fmt.Sprintf(
-						"%s/%s",
-						org,
-						context.ID,
-					), nil
+					return context.ID, nil
 				},
 				ImportState:       true,
 				ImportStateVerify: true,
@@ -98,7 +88,7 @@ func TestAccCircleCIContext_import_name(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccOrgProviders,
+		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckCircleCIContextDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -106,12 +96,8 @@ func TestAccCircleCIContext_import_name(t *testing.T) {
 				Check:  testAccCheckCircleCIContextExists("circleci_context.foo", context),
 			},
 			{
-				ResourceName: "circleci_context.foo",
-				ImportStateId: fmt.Sprintf(
-					"%s/%s",
-					os.Getenv("TEST_CIRCLECI_ORGANIZATION"),
-					"terraform-test",
-				),
+				ResourceName:      "circleci_context.foo",
+				ImportStateId:     "terraform-test",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -121,12 +107,13 @@ func TestAccCircleCIContext_import_name(t *testing.T) {
 
 func testAccCheckCircleCIContextExists(addr string, context *api.Context) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		c := testAccOrgProvider.Meta().(*client.Client)
+		c := testAccProvider.Meta().(*client.Client)
 
 		resource, ok := s.RootModule().Resources[addr]
 		if !ok {
 			return fmt.Errorf("Not found: %s", addr)
 		}
+
 		if resource.Primary.ID == "" {
 			return fmt.Errorf("No instance ID is set")
 		}
@@ -143,7 +130,7 @@ func testAccCheckCircleCIContextExists(addr string, context *api.Context) resour
 }
 
 func testAccCheckCircleCIContextDestroy(s *terraform.State) error {
-	c := testAccOrgProvider.Meta().(*client.Client)
+	c := testAccProvider.Meta().(*client.Client)
 
 	for _, resource := range s.RootModule().Resources {
 		if resource.Type != "circleci_context" {

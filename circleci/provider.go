@@ -1,15 +1,21 @@
 package circleci
 
 import (
+	"github.com/SectorLabs/terraform-provider-circleci/circleci/client"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-
-	"github.com/mrolla/terraform-provider-circleci/circleci/client"
 )
 
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
+			"organization": {
+				Type:        schema.TypeString,
+				Required:    true,
+				DefaultFunc: schema.EnvDefaultFunc("CIRCLECI_ORGANIZATION", nil),
+				Description: "The CircleCI organization.",
+			},
 			"api_token": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -21,12 +27,6 @@ func Provider() terraform.ResourceProvider {
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("CIRCLECI_VCS_TYPE", "github"),
 				Description: "The VCS type for the organization.",
-			},
-			"organization": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("CIRCLECI_ORGANIZATION", nil),
-				Description: "The CircleCI organization.",
 			},
 			"url": {
 				Type:        schema.TypeString,

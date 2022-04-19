@@ -1,9 +1,9 @@
 package circleci
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	client "github.com/SectorLabs/terraform-provider-circleci/circleci/client"
 
-	client "github.com/mrolla/terraform-provider-circleci/circleci/client"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func dataSourceCircleCIContext() *schema.Resource {
@@ -16,12 +16,6 @@ func dataSourceCircleCIContext() *schema.Resource {
 				Required:    true,
 				Description: "The name of the context",
 			},
-			"organization": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				ForceNew:    true,
-				Description: "The organization where the context is defined",
-			},
 		},
 	}
 }
@@ -29,10 +23,9 @@ func dataSourceCircleCIContext() *schema.Resource {
 func dataSourceCircleCIContextRead(d *schema.ResourceData, m interface{}) error {
 	c := m.(*client.Client)
 
-	org := d.Get("organization").(string)
 	name := d.Get("name").(string)
 
-	ctx, err := c.GetContextByName(name, org)
+	ctx, err := c.GetContextByName(name)
 	if err != nil {
 		return err
 	}

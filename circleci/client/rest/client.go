@@ -51,7 +51,7 @@ func (c *Client) NewRequest(method string, u *url.URL, payload interface{}) (req
 
 	req.Header.Set("Circle-Token", c.circleToken)
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "mrolla/terraform-provider-circleci")
+	req.Header.Set("User-Agent", "SectorLabs/terraform-provider-circleci")
 	if payload != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -86,7 +86,7 @@ func (c *Client) DoRequest(req *http.Request, resp interface{}) (statusCode int,
 
 		err = json.NewDecoder(httpResp.Body).Decode(resp)
 		if err != nil {
-			return httpResp.StatusCode, err
+			return httpResp.StatusCode, fmt.Errorf("could not decode response: %v", err)
 		}
 	}
 	return httpResp.StatusCode, nil

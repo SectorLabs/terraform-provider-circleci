@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
+
+	"github.com/SectorLabs/terraform-provider-circleci/circleci/client/rest"
 
 	"github.com/CircleCI-Public/circleci-cli/api"
 	"github.com/CircleCI-Public/circleci-cli/settings"
-
-	"github.com/mrolla/terraform-provider-circleci/circleci/client/rest"
 )
 
 // Client provides access to the CircleCI REST API
@@ -58,29 +59,52 @@ func New(config Config) (*Client, error) {
 	}, nil
 }
 
-// Organization returns the organization for a request. If an organization is provided,
-// that is returned. Next, an organization configured in the provider is returned.
-// If neither are set, an error is returned.
-func (c *Client) Organization(org string) (string, error) {
-	if org != "" {
-		return org, nil
-	}
-
-	if c.organization != "" {
-		return c.organization, nil
-	}
-
-	return "", errors.New("organization is required")
+// Organization returns the organization for a request. The organization configured
+// in the provider is returned.
+func (c *Client) Organization() string {
+	return c.organization
 }
 
 // Slug returns a project slug, including the VCS, organization, and project names
-func (c *Client) Slug(org, project string) (string, error) {
-	o, err := c.Organization(org)
-	if err != nil {
-		return "", err
+func (c *Client) Slug(project string) (string, error) {
+	return fmt.Sprintf("%s/%s/%s", c.vcs, c.organization, project), nil
+}
+
+func (c *Client) DecomposeElementId(id string, identifiers []string) (map[string]string, error) {
+	parts := strings.Split(id, "/")
+
+	parent := identifiers[0]
+	identifiers = identifiers[1:]
+
+	out := map[string]string{}
+	if len(parts) >= 2 {
+		out[parent] = strings.Join(parts[0:len(parts)-len(identifiers)], "/")
+
+		for i, identifier := range identifiers {
+			out[identifier] = parts[len(parts)-len(identifiers)+i]
+		}
 	}
 
-	return fmt.Sprintf("%s/%s/%s", c.vcs, o, project), nil
+	idSyntax := strings.ToUpper(
+		fmt.Sprintf("%s/%s", parent, strings.Join(identifiers, "/")),
+	)
+	composeError := fmt.Errorf("error computing the id. Please make sure the ID is in the form %s", idSyntax)
+
+	if out[parent] == "" {
+		return nil, composeError
+	}
+
+	for _, identifier := range identifiers {
+		if out[identifier] == "" {
+			return nil, composeError
+		}
+	}
+
+	return out, nil
+}
+
+func (c *Client) ComposeElementId(identifiers []string) (string, error) {
+	return strings.Join(identifiers, "/"), nil
 }
 
 func isNotFound(err error) bool {

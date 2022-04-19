@@ -8,39 +8,20 @@ import (
 	"strings"
 	"testing"
 
+	client "github.com/SectorLabs/terraform-provider-circleci/circleci/client"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/stretchr/testify/assert"
-
-	client "github.com/mrolla/terraform-provider-circleci/circleci/client"
 )
 
 var (
 	keyTypes = []string{"deploy-key", "user-key"}
-	idRegEx  = regexp.MustCompile(`(?m).+\..+\..+\.(?:[0-9a-f]{2}\:){15}[0-9a-f]{2}`)
+	idRegEx  = regexp.MustCompile(`(?m).+\/(?:[0-9a-f]{2}\:){15}[0-9a-f]{2}`)
 )
 
-func TestAccCircleCICheckoutKeyOrganizationNotSet(t *testing.T) {
-	for _, keyType := range keyTypes {
-		project := "TEST_" + acctest.RandString(8)
-
-		resource.Test(t, resource.TestCase{
-			PreCheck: func() {
-				testAccPreCheck(t)
-			},
-			Providers: testAccNoOrgProviders,
-			Steps: []resource.TestStep{
-				{
-					Config:      testAccCircleCICheckoutKeyConfigProviderOrg(project, keyType),
-					ExpectError: regexp.MustCompile("organization is required"),
-				},
-			},
-		})
-	}
-}
-
-func TestAccCircleCICheckoutKeyCreateThenUpdateProviderOrg(t *testing.T) {
+func TestAccCircleCICheckoutKeyCreateThenUpdate(t *testing.T) {
 	for _, keyType := range keyTypes {
 		project := os.Getenv("CIRCLECI_PROJECT")
 		resourceName := "circleci_checkout_key." + keyType
@@ -49,11 +30,11 @@ func TestAccCircleCICheckoutKeyCreateThenUpdateProviderOrg(t *testing.T) {
 			PreCheck: func() {
 				testAccPreCheck(t)
 			},
-			Providers:    testAccOrgProviders,
-			CheckDestroy: testAccCircleCICheckoutKeyProviderOrgCheckDestroy,
+			Providers:    testAccProviders,
+			CheckDestroy: testAccCircleCICheckoutKeyCheckDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testAccCircleCICheckoutKeyConfigProviderOrg(project, keyType),
+					Config: testAccCircleCICheckoutKeyConfig(project, keyType),
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestMatchResourceAttr(resourceName, "id", idRegEx),
 						resource.TestCheckResourceAttr(resourceName, "project", project),
@@ -61,7 +42,7 @@ func TestAccCircleCICheckoutKeyCreateThenUpdateProviderOrg(t *testing.T) {
 					),
 				},
 				{
-					Config: testAccCircleCICheckoutKeyConfigProviderOrg(project, keyType),
+					Config: testAccCircleCICheckoutKeyConfig(project, keyType),
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestMatchResourceAttr(resourceName, "id", idRegEx),
 						resource.TestCheckResourceAttr(resourceName, "project", project),
@@ -73,41 +54,7 @@ func TestAccCircleCICheckoutKeyCreateThenUpdateProviderOrg(t *testing.T) {
 	}
 }
 
-func TestAccCircleCICheckoutKeyCreateThenUpdateResourceOrg(t *testing.T) {
-	for _, keyType := range keyTypes {
-		organization := os.Getenv("TEST_CIRCLECI_ORGANIZATION")
-		project := os.Getenv("CIRCLECI_PROJECT")
-		resourceName := "circleci_checkout_key." + keyType
-
-		resource.Test(t, resource.TestCase{
-			PreCheck: func() {
-				testAccPreCheck(t)
-			},
-			Providers:    testAccOrgProviders,
-			CheckDestroy: testAccCircleCICheckoutKeyResourceOrgCheckDestroy,
-			Steps: []resource.TestStep{
-				{
-					Config: testAccCircleCICheckoutKeyConfigResourceOrg(organization, project, keyType),
-					Check: resource.ComposeTestCheckFunc(
-						resource.TestMatchResourceAttr(resourceName, "id", idRegEx),
-						resource.TestCheckResourceAttr(resourceName, "project", project),
-						resource.TestCheckResourceAttr(resourceName, "type", keyType),
-					),
-				},
-				{
-					Config: testAccCircleCICheckoutKeyConfigResourceOrg(organization, project, keyType),
-					Check: resource.ComposeTestCheckFunc(
-						resource.TestMatchResourceAttr(resourceName, "id", idRegEx),
-						resource.TestCheckResourceAttr(resourceName, "project", project),
-						resource.TestCheckResourceAttr(resourceName, "type", keyType),
-					),
-				},
-			},
-		})
-	}
-}
-
-func TestAccCircleCICheckoutKeyImportProviderOrg(t *testing.T) {
+func TestAccCircleCICheckoutKeyImport(t *testing.T) {
 	for _, keyType := range keyTypes {
 		project := os.Getenv("CIRCLECI_PROJECT")
 		resourceName := "circleci_checkout_key." + keyType
@@ -116,45 +63,11 @@ func TestAccCircleCICheckoutKeyImportProviderOrg(t *testing.T) {
 			PreCheck: func() {
 				testAccPreCheck(t)
 			},
-			Providers:    testAccOrgProviders,
-			CheckDestroy: testAccCircleCICheckoutKeyProviderOrgCheckDestroy,
+			Providers:    testAccProviders,
+			CheckDestroy: testAccCircleCICheckoutKeyCheckDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testAccCircleCICheckoutKeyConfigProviderOrg(project, keyType),
-					Check: resource.ComposeTestCheckFunc(
-						resource.TestMatchResourceAttr(resourceName, "id", idRegEx),
-						resource.TestCheckResourceAttr(resourceName, "project", project),
-						resource.TestCheckResourceAttr(resourceName, "type", keyType),
-					),
-				},
-				{
-					ResourceName:      fmt.Sprintf("circleci_environment_variable.%s", keyType),
-					ImportState:       true,
-					ImportStateVerify: true,
-					ImportStateVerifyIgnore: []string{
-						"value",
-					},
-				},
-			},
-		})
-	}
-}
-
-func TestAccCircleCICheckoutKeyImportResourceOrg(t *testing.T) {
-	for _, keyType := range keyTypes {
-		organization := os.Getenv("TEST_CIRCLECI_ORGANIZATION")
-		project := os.Getenv("CIRCLECI_PROJECT")
-		resourceName := "circleci_checkout_key." + keyType
-
-		resource.Test(t, resource.TestCase{
-			PreCheck: func() {
-				testAccPreCheck(t)
-			},
-			Providers:    testAccOrgProviders,
-			CheckDestroy: testAccCircleCICheckoutKeyProviderOrgCheckDestroy,
-			Steps: []resource.TestStep{
-				{
-					Config: testAccCircleCICheckoutKeyConfigResourceOrg(organization, project, keyType),
+					Config: testAccCircleCICheckoutKeyConfig(project, keyType),
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestMatchResourceAttr(resourceName, "id", idRegEx),
 						resource.TestCheckResourceAttr(resourceName, "project", project),
@@ -175,56 +88,56 @@ func TestAccCircleCICheckoutKeyImportResourceOrg(t *testing.T) {
 }
 
 func TestParseCheckoutKeyId(t *testing.T) {
-	organization := acctest.RandString(8)
-	projectNames := []string{
-		"TEST_" + acctest.RandString(8),
-		"TEST-" + acctest.RandString(8),
-		"TEST." + acctest.RandString(8),
-		"TEST_" + acctest.RandString(8) + "." + acctest.RandString(8),
-		"TEST-" + acctest.RandString(8) + "." + acctest.RandString(8),
-		"TEST." + acctest.RandString(8) + "." + acctest.RandString(8),
+	orgs := []string{
+		acctest.RandString(8),
+		"",
 	}
 
-	for _, keyType := range keyTypes {
+	testAccProvider, _ := client.New(client.Config{
+		Organization: orgs[0],
+	})
+
+	clients := []*client.Client{
+		testAccProvider,
+	}
+
+	for i := range clients {
+		c := clients[i]
+		projectNames := []string{
+			"TEST_" + acctest.RandString(8),
+			"TEST-" + acctest.RandString(8),
+			"TEST." + acctest.RandString(8),
+			"TEST_" + acctest.RandString(8) + "." + acctest.RandString(8),
+			"TEST-" + acctest.RandString(8) + "." + acctest.RandString(8),
+			"TEST." + acctest.RandString(8) + "." + acctest.RandString(8),
+		}
+
 		for _, name := range projectNames {
 			fingerprint := generateFingerprint()
-			expectedId := fmt.Sprintf("%s.%s.%s.%s", organization, name, keyType, fingerprint)
-			actualOrganization, actualProjectName, actualKeyType, actualFingerprint := parseCheckoutKeyId(expectedId)
-			assert.Equal(t, organization, actualOrganization)
+			expectedId := fmt.Sprintf("%s/%s", name, fingerprint)
+
+			parts, err := c.DecomposeElementId(expectedId, []string{"project", "fingerprint"})
+			assert.Equal(t, 2, len(parts))
+			assert.Equal(t, nil, err)
+
+			actualProjectName := parts["project"]
+			actualFingerprint := parts["fingerprint"]
+
 			assert.Equal(t, name, actualProjectName)
-			assert.Equal(t, keyType, actualKeyType)
 			assert.Equal(t, fingerprint, actualFingerprint)
 		}
 	}
 }
 
-func testAccCircleCICheckoutKeyResourceOrgCheckDestroy(s *terraform.State) error {
-	c := testAccNoOrgProvider.Meta().(*client.Client)
-	return testAccCircleCICheckoutKeyCheckDestroy(c, s)
-}
+func testAccCircleCICheckoutKeyCheckDestroy(s *terraform.State) error {
+	c := testAccProvider.Meta().(*client.Client)
 
-func testAccCircleCICheckoutKeyProviderOrgCheckDestroy(s *terraform.State) error {
-	c := testAccOrgProvider.Meta().(*client.Client)
-	return testAccCircleCICheckoutKeyCheckDestroy(c, s)
-}
-
-func testAccCircleCICheckoutKeyCheckDestroy(c *client.Client, s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "circleci_checkout_key" {
 			continue
 		}
 
-		organization := rs.Primary.Attributes["organization"]
-		if organization == "" {
-			v, err := c.Organization(organization)
-			if err != nil {
-				return err
-			}
-
-			organization = v
-		}
-
-		has, err := c.HasProjectCheckoutKey(organization, rs.Primary.Attributes["project"], rs.Primary.Attributes["fingerprint"])
+		has, err := c.HasProjectCheckoutKey(rs.Primary.Attributes["project"], rs.Primary.Attributes["fingerprint"])
 		if err != nil {
 			return err
 		}
@@ -237,21 +150,12 @@ func testAccCircleCICheckoutKeyCheckDestroy(c *client.Client, s *terraform.State
 	return nil
 }
 
-func testAccCircleCICheckoutKeyConfigProviderOrg(project, keyType string) string {
+func testAccCircleCICheckoutKeyConfig(project, keyType string) string {
 	return fmt.Sprintf(`
 resource "circleci_checkout_key" "%[2]s" {
   project = "%[1]s"
   type    = "%[2]s"
 }`, project, keyType)
-}
-
-func testAccCircleCICheckoutKeyConfigResourceOrg(organization, project, keyType string) string {
-	return fmt.Sprintf(`
-resource "circleci_checkout_key" "%[2]s" {
-  organization = "%[3]s"
-  project      = "%[1]s"
-  type         = "%[2]s"
-}`, project, keyType, organization)
 }
 
 func generateFingerprint() string {
