@@ -50,6 +50,26 @@ func (c *Client) HasContextEnvironmentVariable(context_name, variable string) (b
 	return false, nil
 }
 
+// GetContextEnvironmentVariable lists all environment variables for a given context and returns the variable if the it is defined.
+// If either the context or the variable does not exist, it returns nil.
+func (c *Client) GetContextEnvironmentVariable(context_name, variable string) (*api.EnvironmentVariable, error) {
+	envs, err := c.ListContextEnvironmentVariables(context_name)
+	if err != nil {
+		if isNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	for _, env := range *envs {
+		if env.Variable == variable {
+			return &env, nil
+		}
+	}
+
+	return nil, nil
+}
+
 // DeleteContextEnvironmentVariable deletes a context environment variable by context ID and name
 func (c *Client) DeleteContextEnvironmentVariable(context_name, variable string) error {
 	// Find context ID

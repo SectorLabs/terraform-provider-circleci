@@ -42,6 +42,18 @@ func resourceCircleCIContextEnvironmentVariable() *schema.Resource {
 				},
 				Description: "The value that will be set for the environment variable.",
 			},
+			"created_at": {
+				Type:      schema.TypeString,
+				Computed:  true,
+				ForceNew: true,
+				Description: "The date and time the environment variable was created.",
+			},
+			"updated_at": {
+				Type:      schema.TypeString,
+				Computed:  true,
+				ForceNew: true,
+				Description: "The date and time the environment variable was created.",
+			},
 		},
 	}
 }
@@ -70,14 +82,18 @@ func resourceCircleCIContextEnvironmentVariableRead(d *schema.ResourceData, m in
 	context := d.Get("context").(string)
 	name := d.Get("name").(string)
 
-	has, err := c.HasContextEnvironmentVariable(context, name)
+	envVariable, err := c.GetContextEnvironmentVariable(context, name)
 	if err != nil {
 		return fmt.Errorf("failed to get context environment variables: %w", err)
 	}
-
-	if !has {
+	if envVariable == nil {
 		d.SetId("")
+		return nil
 	}
+
+	d.Set("name", envVariable.Variable)
+	d.Set("created_at", envVariable.CreatedAt.String())
+	d.Set("updated_at", envVariable.UpdatedAt.String())
 
 	return nil
 }
