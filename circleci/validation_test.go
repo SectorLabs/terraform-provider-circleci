@@ -17,6 +17,9 @@ func TestValidateEnvironmentVariableName(t *testing.T) {
 			Name: "VALID_UNDERSCORE_",
 		},
 		{
+			Name: "_VALID_LEADING_UNDERSCORE",
+		},
+		{
 			Name: "VALID_DIGIT_1",
 		},
 		{
@@ -25,10 +28,6 @@ func TestValidateEnvironmentVariableName(t *testing.T) {
 		},
 		{
 			Name:  "1_invalid_leading_digit",
-			Error: true,
-		},
-		{
-			Name:  "_invalid_leading_underscore",
 			Error: true,
 		},
 	}

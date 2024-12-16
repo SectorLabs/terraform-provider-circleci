@@ -8,7 +8,7 @@ import (
 
 var (
 	// https://circleci.com/docs/2.0/env-vars/#injecting-environment-variables-with-the-api
-	environmentVariablePrefixRegex = regexp.MustCompile("^[[:alpha:]]")
+	environmentVariablePrefixRegex = regexp.MustCompile("^[[:alpha:]_]")
 	environmentVariableCharsRegex  = regexp.MustCompile("^[[:word:]]+$")
 )
 
@@ -19,7 +19,7 @@ func validateEnvironmentVariableNameFunc(v interface{}, key string) (warns []str
 	}
 
 	if !environmentVariablePrefixRegex.MatchString(name) {
-		errs = append(errs, errors.New("environment variables may only begin with a letter"))
+		errs = append(errs, errors.New("environment variables may only begin with a letter or an underscore"))
 	}
 
 	if !environmentVariableCharsRegex.MatchString(name) {
